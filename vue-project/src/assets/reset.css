@@ -1,0 +1,273 @@
+/* 浏览器默认样式重置 */
+
+/* 重置所有元素的 margin 和 padding */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* HTML 和 body 样式 */
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  line-height: 1.5;
+  color: #333;
+  background-color: #fff;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* 移除列表样式 */
+ul,
+ol {
+  list-style: none;
+}
+
+/* 移除链接默认样式 */
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* 移除按钮默认样式 */
+button {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+  outline: none;
+}
+
+/* 移除输入框默认样式 */
+input,
+textarea,
+select {
+  font: inherit;
+  border: none;
+  outline: none;
+  background: none;
+}
+
+/* 移除标题默认样式 */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-weight: normal;
+  font-size: inherit;
+}
+
+/* 移除图片默认样式 */
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* 移除表格默认样式 */
+table {
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
+/* 移除引用默认样式 */
+blockquote,
+q {
+  quotes: none;
+}
+
+blockquote::before,
+blockquote::after,
+q::before,
+q::after {
+  content: '';
+  content: none;
+}
+
+/* 移除代码默认样式 */
+code,
+kbd,
+samp,
+pre {
+  font-family: 'Courier New', Courier, monospace;
+}
+
+/* 移除表单元素默认样式 */
+fieldset {
+  border: none;
+  margin: 0;
+  padding: 0;
+}
+
+legend {
+  padding: 0;
+}
+
+/* 移除 details 和 summary 默认样式 */
+details {
+  display: block;
+}
+
+summary {
+  display: list-item;
+  cursor: pointer;
+}
+
+/* 移除 iframe 默认样式 */
+iframe {
+  border: none;
+}
+
+/* 移除 hr 默认样式 */
+hr {
+  border: none;
+  border-top: 1px solid #e0e0e0;
+  margin: 0;
+}
+
+/* 移除 address 默认样式 */
+address {
+  font-style: normal;
+}
+
+/* 移除 abbr 和 acronym 默认样式 */
+abbr[title],
+acronym[title] {
+  text-decoration: none;
+  cursor: help;
+}
+
+/* 移除 mark 默认样式 */
+mark {
+  background: none;
+  color: inherit;
+}
+
+/* 移除 sub 和 sup 默认样式 */
+sub,
+sup {
+  font-size: 75%;
+  line-height: 0;
+  position: relative;
+  vertical-align: baseline;
+}
+
+sub {
+  bottom: -0.25em;
+}
+
+sup {
+  top: -0.5em;
+}
+
+/* 移除 small 默认样式 */
+small {
+  font-size: 80%;
+}
+
+/* 移除 b 和 strong 默认样式 */
+b,
+strong {
+  font-weight: bold;
+}
+
+/* 移除 i 和 em 默认样式 */
+i,
+em {
+  font-style: italic;
+}
+
+/* 移除 del 和 ins 默认样式 */
+del {
+  text-decoration: line-through;
+}
+
+ins {
+  text-decoration: underline;
+}
+
+/* 移除 figure 和 figcaption 默认样式 */
+figure {
+  margin: 0;
+}
+
+figcaption {
+  font-size: 0.9em;
+  color: #666;
+}
+
+/* 移除 progress 和 meter 默认样式 */
+progress,
+meter {
+  vertical-align: baseline;
+}
+
+/* 移除 audio 和 video 默认样式 */
+audio,
+video {
+  display: inline-block;
+}
+
+audio:not([controls]) {
+  display: none;
+  height: 0;
+}
+
+/* 移除 canvas 默认样式 */
+canvas {
+  display: inline-block;
+}
+
+/* 移除 svg 默认样式 */
+svg:not(:root) {
+  overflow: hidden;
+}
+
+/* 移除 template 和 hidden 元素 */
+template,
+[hidden] {
+  display: none;
+}
+
+/* 移除 focus 默认样式 */
+:focus {
+  outline: none;
+}
+
+/* 移除 disabled 元素样式 */
+:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* 移除 placeholder 默认样式 */
+::placeholder {
+  color: #999;
+  opacity: 1;
+}
+
+/* 移除 selection 默认样式 */
+::selection {
+  background-color: #b3d4fc;
+  color: #000;
+}
+
+::-moz-selection {
+  background-color: #b3d4fc;
+  color: #000;
+}
+
