@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
-import { initDB, Word } from '../models';
+import { initDatabase } from '../config/database';
+import WordModel from '../models/Word';
 
 /**
  * 解析单词条目 - 支持两种格式
@@ -143,7 +144,7 @@ async function importWords() {
     console.log('开始导入词汇...');
     
     // 初始化数据库
-    await initDB();
+    initDatabase();
     console.log('数据库初始化完成');
     
     // 读取词汇文件
@@ -210,29 +211,25 @@ async function importWords() {
       
       for (const word of batch) {
         try {
-          // 使用 findOrCreate 避免重复插入
-          const [instance, created] = await Word.findOrCreate({
-            where: { text: word.text },
-            defaults: {
-              text: word.text,
-              phonetic: word.phonetic,
-              translation: word.translation,
-            },
-          });
-          
-          if (created) {
-            imported++;
+          const existing = WordModel.findByText(word.text);
+          if (existing) {
+             // 如果已存在，更新翻译和音标（如果不同）
+             if (existing.translation !== word.translation || existing.phonetic !== word.phonetic) {
+                 WordModel.update(existing.id, {
+                    phonetic: word.phonetic,
+                    translation: word.translation
+                 });
+                 imported++;
+             } else {
+                 skipped++;
+             }
           } else {
-            // 如果已存在，更新翻译和音标（如果需要）
-            if (instance.translation !== word.translation || instance.phonetic !== word.phonetic) {
-              await instance.update({
+             WordModel.create({
+                text: word.text,
                 phonetic: word.phonetic,
-                translation: word.translation,
-              });
-              imported++;
-            } else {
-              skipped++;
-            }
+                translation: word.translation
+             });
+             imported++;
           }
         } catch (error) {
           console.error(`导入单词 "${word.text}" 时出错:`, error);
@@ -245,12 +242,11 @@ async function importWords() {
     }
     
     console.log(`\n导入完成！`);
-    console.log(`- 新导入: ${imported} 个单词`);
-    console.log(`- 跳过（已存在）: ${skipped} 个单词`);
-    console.log(`- 总计: ${imported + skipped} 个单词`);
+    console.log(`- 新导入/更新: ${imported} 个单词`);
+    console.log(`- 跳过（已存在且未变）: ${skipped} 个单词`);
     
     // 统计数据库中的总单词数
-    const totalCount = await Word.count();
+    const totalCount = WordModel.count();
     console.log(`\n数据库中现有单词总数: ${totalCount}`);
     
     process.exit(0);

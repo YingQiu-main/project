@@ -1,34 +1,35 @@
-import { DataTypes, Model, InferAttributes, InferCreationAttributes, CreationOptional } from 'sequelize';
-import sequelize from '../config/database';
+import db from '../config/database';
 
-// 定义 User 模型
-class User extends Model<InferAttributes<User>, InferCreationAttributes<User>> {
-  declare id: CreationOptional<number>;
-  declare username: string;
-  declare password: string;
+export interface User {
+  id: number;
+  username: string;
+  password: string;
 }
 
-User.init(
-  {
-    id: {
-      type: DataTypes.INTEGER,
-      autoIncrement: true,
-      primaryKey: true,
-    },
-    username: {
-      type: DataTypes.STRING,
-      allowNull: false,
-      unique: true,
-    },
-    password: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
-  },
-  {
-    sequelize,
-    tableName: 'users',
+export class UserModel {
+  // 创建新用户
+  static create(user: Omit<User, 'id'>): User {
+    // SQL: 向users表插入新用户记录（用户名和密码）
+    const stmt = db.prepare('INSERT INTO users (username, password) VALUES (?, ?)');
+    const info = stmt.run(user.username, user.password);
+    return { ...user, id: info.lastInsertRowid as number };
   }
-);
 
-export default User;
+  // 根据用户名查找用户
+  static findByUsername(username: string): User | undefined {
+    // SQL: 从users表中查询指定用户名的用户信息
+    const stmt = db.prepare('SELECT * FROM users WHERE username = ?');
+    const user = stmt.get(username) as User | undefined;
+    return user;
+  }
+
+  // 根据用户ID查找用户
+  static findById(id: number): User | undefined {
+    // SQL: 从users表中查询指定ID的用户信息
+    const stmt = db.prepare('SELECT * FROM users WHERE id = ?');
+    const user = stmt.get(id) as User | undefined;
+    return user;
+  }
+}
+
+export default UserModel;

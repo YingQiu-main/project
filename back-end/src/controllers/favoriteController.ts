@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { Favorite } from '../models';
+import FavoriteModel from '../models/Favorite';
 
 // 添加/移除收藏
 export const toggleFavorite = async (req: Request, res: Response) => {
@@ -12,15 +12,13 @@ export const toggleFavorite = async (req: Request, res: Response) => {
       return res.status(401).json({ message: 'Unauthorized' });
     }
 
-    const existing = await Favorite.findOne({
-      where: { userId, type, targetId }
-    });
+    const existing = FavoriteModel.findByUserAndTarget(userId, type, targetId);
 
     if (existing) {
-      await existing.destroy();
+      FavoriteModel.delete(userId, type, targetId);
       res.json({ message: 'Removed from favorites', isFavorite: false });
     } else {
-      await Favorite.create({ userId, type, targetId });
+      FavoriteModel.create({ userId, type, targetId });
       res.json({ message: 'Added to favorites', isFavorite: true });
     }
   } catch (error) {
@@ -39,13 +37,9 @@ export const getFavorites = async (req: Request, res: Response) => {
       return res.status(401).json({ message: 'Unauthorized' });
     }
 
-    const where: any = { userId };
-    if (type) where.type = type;
-
-    const favorites = await Favorite.findAll({ where });
+    const favorites = FavoriteModel.findAllByUser(userId, type as string | undefined);
     res.json(favorites);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching favorites', error });
   }
 };
-

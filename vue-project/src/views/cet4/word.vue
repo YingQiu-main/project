@@ -1,9 +1,9 @@
 <template>
     <div class="word-display">
-        <h1 class="word-text">{{ word.word }}</h1>
-        <div class="word-pronunciation" v-if="showPronunciation">
-            <span class="pronunciation-label">AmE:</span>
-            <span class="pronunciation-text">[{{ pronunciation }}]</span>
+        <h1 class="word-text">{{ displayWord }}</h1>
+        <div class="word-pronunciation" v-if="showPronunciation && displayPhonetic">
+            <span class="pronunciation-label">音标:</span>
+            <span class="pronunciation-text">{{ displayPhonetic }}</span>
             <n-button circle size="small" @click="playPronunciation" :disabled="!speechSynthesisSupported"
                 class="pronunciation-btn">
                 <template #icon>
@@ -32,11 +32,18 @@ const props = withDefaults(defineProps<Props>(), {
 // 语音合成支持
 const speechSynthesisSupported = ref('speechSynthesis' in window)
 
-// 获取单词发音（简单模拟，实际可以从API获取）
-const pronunciation = computed(() => {
-    // 这里可以后续接入真实的发音API
-    // 暂时返回一个占位符
-    return `'${props.word.word.toLowerCase().substring(0, 3)}...]`
+// 获取显示的单词
+const displayWord = computed(() => {
+    return props.word.text || ''
+})
+
+// 获取音标（优先使用API返回的phonetic字段）
+const displayPhonetic = computed(() => {
+    if (props.word.phonetic) {
+        return props.word.phonetic
+    }
+    // 如果没有音标，返回空字符串（不显示音标行）
+    return ''
 })
 
 // 播放单词读音
@@ -45,7 +52,10 @@ const playPronunciation = () => {
         return
     }
 
-    const utterance = new SpeechSynthesisUtterance(props.word.word)
+    const wordToSpeak = displayWord.value
+    if (!wordToSpeak) return
+
+    const utterance = new SpeechSynthesisUtterance(wordToSpeak)
     utterance.lang = 'en-US'
     utterance.rate = 0.8
     speechSynthesis.speak(utterance)

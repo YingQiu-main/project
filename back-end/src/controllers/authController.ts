@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import User from '../models/User';
+import UserModel from '../models/User';
 
 // 注册逻辑
 export const register = async (req: Request, res: Response) => {
@@ -9,16 +9,16 @@ export const register = async (req: Request, res: Response) => {
     const { username, password } = req.body;
 
     // 1. 检查用户是否已存在
-    const existingUser = await User.findOne({ where: { username } });
+    const existingUser = UserModel.findByUsername(username);
     if (existingUser) {
       return res.status(400).json({ message: 'Username already exists' });
     }
 
-    // 2. 密码加密
+    // 2. 第二个参数是盐的复杂度，进行哈希加密，返回加密后的字符串
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // 3. 创建用户
-    const newUser = await User.create({
+    const newUser = UserModel.create({
       username,
       password: hashedPassword,
     });
@@ -36,7 +36,7 @@ export const login = async (req: Request, res: Response) => {
     const { username, password } = req.body;
 
     // 1. 查找用户
-    const user = await User.findOne({ where: { username } });
+    const user = UserModel.findByUsername(username);
     if (!user) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
@@ -47,14 +47,14 @@ export const login = async (req: Request, res: Response) => {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    // 3. 生成 Access Token (有效期较短，如 1 小时)
+    // 3. 生成 Access Token，payload放入usename和id，不要放密码，因为token是可以解码的，第二个参数使用密钥，第三个参数7d代表7天
     const accessToken = jwt.sign(
       { userId: user.id, username: user.username },
       process.env.JWT_SECRET || 'default_secret',
-      { expiresIn: '1h' }
+      { expiresIn: '7d' }
     );
 
-    // 4. 生成 Refresh Token (有效期较长，如 7 天)
+    // 4. 生成刷新 Refresh Token (有效期较长，如 7 天)
     // 注意：实际项目中 Refresh Token 应该存储在数据库中以便吊销
     const refreshToken = jwt.sign(
       { userId: user.id, username: user.username },

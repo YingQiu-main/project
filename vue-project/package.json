@@ -18,6 +18,7 @@
     "gen-report": "node scripts/generate-report.js"
   },
   "dependencies": {
+    "axios": "^1.13.2",
     "docx": "8",
     "mammoth": "^1.11.0",
     "pinia": "^3.0.3",

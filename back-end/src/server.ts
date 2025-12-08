@@ -1,5 +1,5 @@
 import app from './app';
-import { initDB } from './models';
+import { initDatabase } from './config/database';
 import dotenv from 'dotenv';
 
 // ==================================================================
@@ -17,19 +17,18 @@ const PORT = process.env.PORT || 3000;
 // ==================================================================
 const startServer = async () => {
   try {
-    console.log('Starting server...');
+    console.log('正在启动服务器...');
 
     // 第一步：初始化数据库
     // 连接 SQLite 数据库，并根据 Model 定义自动创建/更新数据表
-    await initDB();
-    console.log('Database initialized successfully.');
+    initDatabase();
     
     // 第二步：启动 HTTP 服务器
     // app.listen 开启端口监听，开始接收 HTTP 请求
     app.listen(PORT, () => {
       console.log(`
       ################################################
-      🛡️  Server listening on port: ${PORT} 🛡️
+      🛡️  服务器正在监听端口: ${PORT} 🛡️
       http://localhost:${PORT}
       ################################################
       `);
@@ -37,7 +36,7 @@ const startServer = async () => {
 
   } catch (error) {
     // 如果启动过程中发生错误 (如数据库连接失败)，打印错误并退出进程
-    console.error('Failed to start server:', error);
+    console.error('服务器启动失败:', error);
     process.exit(1); // 非 0 状态码表示异常退出
   }
 };

@@ -1,34 +1,44 @@
 <script setup lang="ts">
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import ChapterSelectDialog from '@/components/ChapterSelectDialog.vue'
 
 const router = useRouter()
+const showChapterDialog = ref(false)
+
+// 处理章节选择
+const handleChapterSelect = (chapterId: number) => {
+    // 跳转到cet4页面，并传递章节ID
+    router.push({
+        path: '/cet4',
+        query: { chapterId: chapterId.toString() }
+    })
+}
 
 // 通用点击事件处理函数
 const handleCardClick = (type: 'cet4' | 'cet6' | 'article') => {
-    console.log(`点击了${type}卡片`)
-
-    // 根据类型跳转到不同路由
-    switch (type) {
-        case 'cet4':
-            router.push('/cet4')
-            break
-        case 'cet6':
-            router.push('/cet6')
-            break
-        case 'article':
-            router.push('/article')
-            break
+    if (type === 'cet4') {
+        // 显示章节选择对话框
+        showChapterDialog.value = true
+    } else {
+        // 其他类型直接跳转
+        switch (type) {
+            case 'cet6':
+                router.push('/cet6')
+                break
+            case 'article':
+                router.push('/article')
+                break
+        }
     }
-
-    // 或者你可以执行其他操作，比如：
-    // - 显示弹窗
-    // - 调用 API
-    // - 更新状态等
 }
 </script>
 
 <template>
     <div class="card-container">
+        <!-- 章节选择对话框 -->
+        <ChapterSelectDialog v-model="showChapterDialog" @select="handleChapterSelect" />
+        
         <n-card class="card-item cet4-card" hoverable @click="handleCardClick('cet4')">
             <template #header>
                 <div class="card-header">

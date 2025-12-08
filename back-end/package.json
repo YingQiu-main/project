@@ -7,7 +7,8 @@
     "start": "ts-node src/server.ts",
     "dev": "nodemon src/server.ts",
     "build": "tsc",
-    "import:words": "npx ts-node src/scripts/importWords.ts"
+    "import:words": "npx ts-node src/scripts/importWords.ts",
+    "divide:chapters": "npx ts-node src/scripts/divideWordsIntoChapters.ts"
   },
   "keywords": [],
   "author": "",

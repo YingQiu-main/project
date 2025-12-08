@@ -1,6 +1,5 @@
 import { Request, Response } from 'express';
-import { StudyRecord, sequelize } from '../models';
-import { Op } from 'sequelize';
+import StudyRecordModel from '../models/StudyRecord';
 
 // 记录学习进度
 export const recordProgress = async (req: Request, res: Response) => {
@@ -15,7 +14,7 @@ export const recordProgress = async (req: Request, res: Response) => {
       return res.status(401).json({ message: 'Unauthorized' });
     }
 
-    const record = await StudyRecord.create({
+    const record = StudyRecordModel.create({
       userId,
       type,
       targetId,
@@ -40,24 +39,14 @@ export const getStats = async (req: Request, res: Response) => {
     }
 
     // 统计累计练习单词数
-    const wordCount = await StudyRecord.count({
-      where: { userId, type: 'word', action: 'practice' }
-    });
+    const wordCount = StudyRecordModel.countWordsPracticed(userId);
 
     // 统计文章阅读量
-    const articleCount = await StudyRecord.count({
-      where: { userId, type: 'article', action: 'read' },
-      distinct: true,
-      col: 'targetId'
-    });
+    const articleCount = StudyRecordModel.countArticlesRead(userId);
 
-    // 简单的正确率计算 (仅示例)
-    const correctCount = await StudyRecord.count({
-      where: { userId, type: 'word', isCorrect: true }
-    });
-    const totalPractice = await StudyRecord.count({
-      where: { userId, type: 'word', action: 'practice' } // 这里假设 practice 动作包含 isCorrect 字段
-    });
+    // 简单的正确率计算
+    const correctCount = StudyRecordModel.countCorrectWords(userId);
+    const totalPractice = StudyRecordModel.countTotalWordPractices(userId);
 
     const accuracy = totalPractice > 0 ? (correctCount / totalPractice) : 0;
 
@@ -71,4 +60,3 @@ export const getStats = async (req: Request, res: Response) => {
     res.status(500).json({ message: 'Error fetching stats', error });
   }
 };
-
