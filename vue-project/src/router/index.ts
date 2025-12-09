@@ -53,6 +53,14 @@ const routes: RouteRecordRaw[] = [
       requiresAuth: true // 需要认证
     },
   },
+  {
+    path: '/article/detail',
+    name: 'article-detail',
+    component: () => import('@/views/article/detail.vue'),
+    meta: {
+      requiresAuth: true // 需要认证
+    },
+  },
 ]
 
 const router = createRouter({

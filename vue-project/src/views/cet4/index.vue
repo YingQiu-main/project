@@ -3,10 +3,26 @@
         <!-- 章节选择对话框 -->
         <ChapterSelectDialog v-model="showChapterDialog" @select="handleChapterSelect" />
 
+        <!-- 已学会单词列表对话框 -->
+        <n-modal v-model:show="showMasteredWordsDialog" preset="card" title="已学会的单词" style="width: 600px">
+            <div class="mastered-words-list">
+                <div v-if="masteredWords.length === 0" class="no-mastered-words">
+                    <n-empty description="暂无已学会的单词" />
+                </div>
+                <div v-else class="words-grid">
+                    <div v-for="word in masteredWords" :key="word.id" class="word-item">
+                        <div class="word-text">{{ word.text }}</div>
+                        <div class="word-phonetic">{{ word.phonetic }}</div>
+                        <div class="word-translation">{{ word.translation }}</div>
+                    </div>
+                </div>
+            </div>
+        </n-modal>
+
         <!-- 查看模式：单单词显示 -->
         <div v-if="mode === 'view'" class="view-mode">
             <div v-if="currentWord" class="word-display-wrapper">
-                <!-- 章节信息 -->
+                <!-- 上方的章节信息 -->
                 <div v-if="currentChapter" class="chapter-info-header">
                     <h3 class="chapter-title">{{ currentChapter.name }}</h3>
                     <span class="chapter-word-count">共 {{ currentChapter.word_count }} 个单词</span>
@@ -45,6 +61,9 @@
                     </n-button>
                     <n-button class="start-exam-button" @click="handleStartExamClick" v-if="currentWords.length > 0">
                         开始检验
+                    </n-button>
+                    <n-button class="view-mastered-button" @click="showMasteredWordsDialog = true" v-if="masteredWords.length > 0">
+                        查看已学会的单词
                     </n-button>
                 </div>
             </div>
@@ -204,6 +223,7 @@ import {
     NAlert,
     NResult,
     NEmpty,
+    NModal,
     useMessage,
     useDialog
 } from 'naive-ui'
@@ -219,6 +239,9 @@ const dialog = useDialog()
 // 章节选择对话框
 const showChapterDialog = ref(false)
 
+// 已学会单词列表对话框
+const showMasteredWordsDialog = ref(false)
+
 // 当前章节信息
 const currentChapter = ref<{
     id: number
@@ -232,7 +255,8 @@ const mode = ref<'view' | 'practice' | 'exam'>('view')
 
 // 查看模式相关
 const wordsPerPage = ref(10)
-const currentWords = ref<Word[]>([])
+const allChapterWords = ref<Word[]>([]) // 存储章节所有单词（包括已掌握的）
+const currentWords = ref<Word[]>([]) // 只包含未掌握的单词，用于学习和考试
 const currentWordIndex = ref(0)
 
 // 学习时间统计
@@ -264,11 +288,18 @@ const nextWord = computed(() => {
     return null
 })
 
+// 已掌握的单词列表
+const masteredWords = computed(() => {
+    return allChapterWords.value.filter(word => word.isMastered === 1)
+})
+
 const progressText = computed(() => {
-    const total = wordStore.allWords.length
-    const mastered = wordStore.masteredWordIds.size
-    const learning = wordStore.learningWords.length
-    return `${mastered}/${total} (待学习: ${learning})`
+    if (!currentChapter.value || allChapterWords.value.length === 0) {
+        return '0/0'
+    }
+    const total = allChapterWords.value.length
+    const mastered = masteredWords.value.length
+    return `${mastered}/${total}`
 })
 
 // 练习模式相关
@@ -376,7 +407,7 @@ const handleKeyDown = (e: KeyboardEvent) => {
     }
 }
 
-// 处理章节选择
+// 通过章节获取单词
 const handleChapterSelect = async (chapterId: number) => {
     try {
         const response: any = await request.get(`/api/words/chapters/${chapterId}`)
@@ -394,8 +425,12 @@ const handleChapterSelect = async (chapterId: number) => {
                 lastPracticedAt: w.lastPracticedAt
             }))
             
-            // 按返回的顺序设置单词
-            currentWords.value = words
+            // 存储所有单词（包括已掌握的）
+            allChapterWords.value = words
+            
+            // 只显示未掌握的单词用于学习和考试
+            const notMastered = words.filter(w => w.isMastered !== 1)
+            currentWords.value = notMastered
             currentWordIndex.value = 0
             
             // 更新wordStore
@@ -405,7 +440,8 @@ const handleChapterSelect = async (chapterId: number) => {
                 message.warning('该章节暂无单词')
                 currentWordIndex.value = -1
             } else {
-                message.success(`已加载 ${words.length} 个单词`)
+                const masteredCount = words.filter(w => w.isMastered === 1).length
+                message.success(`已加载 ${words.length} 个单词${masteredCount > 0 ? `，其中 ${masteredCount} 个已掌握` : ''}`)
                 startTimer()
             }
         } else {
@@ -419,12 +455,13 @@ const handleChapterSelect = async (chapterId: number) => {
 
 // 初始化
 onMounted(async () => {
+    // 这个对象上 有没有这个属性或方法（哪怕在原型上）
     speechSynthesisSupported.value = 'speechSynthesis' in window
     
     // 从路由参数获取章节ID
     const chapterId = router.currentRoute.value.query.chapterId
     if (chapterId) {
-        // 如果有章节ID，直接加载该章节的单词
+        // 如果有章节ID，直接加载该章节的单词，存储到words中
         await handleChapterSelect(Number(chapterId))
     } else {
         // 如果没有章节ID，显示章节选择对话框
@@ -515,6 +552,7 @@ const startExam = () => {
     examWords.value = shuffled
     examIndex.value = 0
     examResults.value = []
+    // 单词的字母数量
     userInputArray.value = []
     showExamFeedback.value = false
     isExamCorrect.value = false
@@ -548,6 +586,7 @@ const handleExamKeyDown = (e: KeyboardEvent) => {
 
     // 只处理字母和退格键
     if (e.key === 'Backspace') {
+        // 阻止浏览器对这个事件的默认行为e.preventDefault()
         e.preventDefault()
         // 从后往前清除
         for (let i = userInputArray.value.length - 1; i >= 0; i--) {
@@ -719,20 +758,33 @@ const submitExamResults = async () => {
     }
 
     try {
-        // 确保所有单词都有结果记录
-        examWords.value.forEach(word => {
+        // 构建包含该章节所有单词的结果数组
+        // 需要包含所有单词（包括已掌握的），而不仅仅是考试中的单词
+        const allResults: Array<{ wordId: number | string; isMastered: number }> = []
+        
+        // 首先，为所有章节单词创建结果记录
+        allChapterWords.value.forEach(word => {
             const wordId = Number(word.id)
-            const existingIndex = examResults.value.findIndex(r => r.wordId === wordId)
-            if (existingIndex < 0) {
-                examResults.value.push({
+            // 检查考试结果中是否有该单词的记录
+            const examResult = examResults.value.find(r => r.wordId === wordId)
+            
+            if (examResult) {
+                // 如果考试中有该单词，使用考试结果
+                allResults.push({
                     wordId: wordId,
-                    isMastered: 0
+                    isMastered: examResult.isMastered
+                })
+            } else {
+                // 如果考试中没有该单词（说明是已掌握的单词），保持原有状态
+                allResults.push({
+                    wordId: wordId,
+                    isMastered: word.isMastered === 1 ? 1 : 0
                 })
             }
         })
 
         await request.post(`/api/words/chapters/${currentChapter.value.id}/practice`, {
-            results: examResults.value
+            results: allResults
         })
 
         message.success('检验结果已提交')
@@ -745,6 +797,11 @@ const submitExamResults = async () => {
         showExamFeedback.value = false
         showAnswerHint.value = false
         isExamCorrect.value = false
+        
+        // 重新加载单词列表以更新 isMastered 状态
+        if (currentChapter.value) {
+            await handleChapterSelect(currentChapter.value.id)
+        }
     } catch (error: any) {
         console.error('提交检验结果失败:', error)
         message.error(error?.response?.data?.message || '提交失败，请稍后重试')
@@ -906,6 +963,22 @@ const submitExamResults = async () => {
 
 .info-box .end-exam-button:hover {
     background: #e74c3c;
+}
+
+.info-box .view-mastered-button {
+    background: #18a058;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.info-box .view-mastered-button:hover {
+    background: #36ad6a;
 }
 
 .chapter-info-header {
@@ -1107,6 +1180,56 @@ const submitExamResults = async () => {
 
 .exam-complete {
     padding: 48px 0;
+}
+
+/* 已学会单词列表样式 */
+.mastered-words-list {
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.no-mastered-words {
+    padding: 40px 0;
+    text-align: center;
+}
+
+.words-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 16px;
+    padding: 16px 0;
+}
+
+.word-item {
+    padding: 16px;
+    background: #f5f5f5;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+    transition: all 0.2s;
+}
+
+.word-item:hover {
+    background: #e8e8e8;
+    border-color: #18a058;
+}
+
+.word-item .word-text {
+    font-size: 18px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 8px;
+}
+
+.word-item .word-phonetic {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 8px;
+    font-style: italic;
+}
+
+.word-item .word-translation {
+    font-size: 14px;
+    color: #999;
 }
 
 @media (max-width: 768px) {

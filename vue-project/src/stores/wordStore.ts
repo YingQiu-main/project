@@ -262,7 +262,7 @@ export const useWordStore = defineStore('word', () => {
     }
   }
   
-  // 设置单词数据（用于后续从API或数据库加载）
+  // 当前章节的单词
   const setWords = (words: Word[]) => {
     allWords.value = words
   }
