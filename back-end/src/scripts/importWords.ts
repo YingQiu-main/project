@@ -227,7 +227,8 @@ async function importWords() {
              WordModel.create({
                 text: word.text,
                 phonetic: word.phonetic,
-                translation: word.translation
+                translation: word.translation,
+                level: 'cet4'
              });
              imported++;
           }

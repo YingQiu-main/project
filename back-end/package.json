@@ -8,7 +8,11 @@
     "dev": "nodemon src/server.ts",
     "build": "tsc",
     "import:words": "npx ts-node src/scripts/importWords.ts",
-    "divide:chapters": "npx ts-node src/scripts/divideWordsIntoChapters.ts"
+    "import:cet6": "npx ts-node src/scripts/importCET6Words.ts",
+    "divide:chapters": "npx ts-node src/scripts/divideWordsIntoChapters.ts",
+    "divide:cet4": "npx ts-node src/scripts/divideCET4WordsIntoChapters.ts",
+    "divide:cet6": "npx ts-node src/scripts/divideCET6WordsIntoChapters.ts",
+    "reset:sequence": "npx ts-node src/scripts/resetSqliteSequence.ts"
   },
   "keywords": [],
   "author": "",

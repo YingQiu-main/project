@@ -62,7 +62,8 @@ export const initDatabase = () => {
       id INTEGER PRIMARY KEY AUTOINCREMENT,  -- 单词ID，主键，自增
       text TEXT NOT NULL UNIQUE,              -- 单词文本，不能为空且唯一
       phonetic TEXT,                          -- 音标（可选）
-      translation TEXT NOT NULL               -- 中文翻译，不能为空
+      translation TEXT NOT NULL,               -- 中文翻译，不能为空
+      level TEXT NOT NULL DEFAULT 'cet4' CHECK(level IN ('cet4', 'cet6'))  -- 单词级别：cet4或cet6，默认为cet4
     );
 
     -- 创建收藏表：存储用户的收藏记录（单词、文章、句子）
@@ -92,6 +93,7 @@ export const initDatabase = () => {
       name TEXT NOT NULL,                     -- 章节名称，如"第1章"
       order_index INTEGER NOT NULL,           -- 章节顺序，用于排序
       word_count INTEGER NOT NULL DEFAULT 0,   -- 该章节包含的单词数量
+      level TEXT NOT NULL DEFAULT 'cet4' CHECK(level IN ('cet4', 'cet6')),  -- 章节级别：cet4或cet6，默认为cet4
       createdAt DATETIME DEFAULT CURRENT_TIMESTAMP  -- 创建时间，默认为当前时间
     );
 

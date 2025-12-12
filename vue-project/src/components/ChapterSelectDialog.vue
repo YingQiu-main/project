@@ -42,11 +42,13 @@ export interface Chapter {
     order_index: number
     word_count: number
     status: number
+    level?: 'cet4' | 'cet6'
     createdAt: string
 }
 
 const props = defineProps<{
     modelValue: boolean
+    level?: 'cet4' | 'cet6'  // 可选：指定要加载的级别
 }>()
 
 const emit = defineEmits<{
@@ -72,7 +74,11 @@ watch(visible, (newVal) => {
 const loadChapters = async () => {
     loading.value = true
     try {
-        const response: any = await request.get('/api/words/chapters')
+        // 如果指定了level，则只加载对应级别的章节
+        const url = props.level 
+            ? `/api/words/chapters?level=${props.level}`
+            : '/api/words/chapters'
+        const response: any = await request.get(url)
         chapters.value = response || []
     } catch (error: any) {
         console.error('加载章节列表失败:', error)

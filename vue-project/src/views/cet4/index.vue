@@ -1,7 +1,7 @@
 <template>
     <div class="cet4-container">
         <!-- 章节选择对话框 -->
-        <ChapterSelectDialog v-model="showChapterDialog" @select="handleChapterSelect" />
+        <ChapterSelectDialog v-model="showChapterDialog" level="cet4" @select="handleChapterSelect" />
 
         <!-- 已学会单词列表对话框 -->
         <n-modal v-model:show="showMasteredWordsDialog" preset="card" title="已学会的单词" style="width: 600px">

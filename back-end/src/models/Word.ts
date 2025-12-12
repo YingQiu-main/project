@@ -5,15 +5,16 @@ export interface Word {
   text: string;
   phonetic: string | null;
   translation: string;
+  level: 'cet4' | 'cet6';
 }
 // 把所有和 words 表相关的操作封装在一个类里，形成 模型层（Model），类里包含了对数据库的增删改查
 export class WordModel {
   // 创建新单词，ts工具类型，Omit<Word, 'id'>用于排除ts的某个字段属性
   static create(word: Omit<Word, 'id'>): Word {
     // db.prepare(sql)返回一个可执行的语句对象（Statement 对象） 
-    const stmt = db.prepare('INSERT INTO words (text, phonetic, translation) VALUES (?, ?, ?)');
+    const stmt = db.prepare('INSERT INTO words (text, phonetic, translation, level) VALUES (?, ?, ?, ?)');
     // 执行sql语句，返回info，lastInsertRowid插入记录的id，change是影响的行数
-    const info = stmt.run(word.text, word.phonetic, word.translation);
+    const info = stmt.run(word.text, word.phonetic, word.translation, word.level);
     // 返回完整的插入对象
     return { ...word, id: info.lastInsertRowid as number };
   }
@@ -47,6 +48,13 @@ export class WordModel {
     // SQL: 从words表中查询所有单词记录
     const stmt = db.prepare('SELECT * FROM words');
     return stmt.all() as Word[];
+  }
+
+  // 根据级别获取单词
+  static findByLevel(level: 'cet4' | 'cet6'): Word[] {
+    // SQL: 从words表中查询指定级别的所有单词记录
+    const stmt = db.prepare('SELECT * FROM words WHERE level = ?');
+    return stmt.all(level) as Word[];
   }
 
   // 更新单词信息(暂不使用)

@@ -6,6 +6,7 @@ import UserWordProgressModel, { UserWordProgress } from '../models/UserWordProgr
 import UserChapterProgressModel from '../models/UserChapterProgress';
 
 // 获取所有章节列表（包含用户学习状态）
+// 支持通过查询参数 level 过滤：?level=cet4 或 ?level=cet6
 export const getChapters = async (req: Request, res: Response) => {
   try {
     const user = req.user as { userId: number; username: string } | undefined;
@@ -15,7 +16,13 @@ export const getChapters = async (req: Request, res: Response) => {
       return res.status(401).json({ message: '未授权' });
     }
 
-    const chapters = ChapterModel.findAll();
+    // 获取查询参数中的level（可选）
+    const level = req.query.level as 'cet4' | 'cet6' | undefined;
+    
+    // 根据level过滤章节，如果没有指定level则返回所有章节
+    const chapters = level 
+      ? ChapterModel.findByLevel(level)
+      : ChapterModel.findAll();
     
     // 获取用户所有章节的学习状态
     const userChapterProgressList = UserChapterProgressModel.findAllByUser(userId);
