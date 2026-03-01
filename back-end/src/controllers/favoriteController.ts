@@ -12,13 +12,13 @@ export const toggleFavorite = async (req: Request, res: Response) => {
       return res.status(401).json({ message: 'Unauthorized' });
     }
 
-    const existing = FavoriteModel.findByUserAndTarget(userId, type, targetId);
+    const existing = await FavoriteModel.findByUserAndTarget(userId, type, targetId);
 
     if (existing) {
-      FavoriteModel.delete(userId, type, targetId);
+      await FavoriteModel.delete(userId, type, targetId);
       res.json({ message: 'Removed from favorites', isFavorite: false });
     } else {
-      FavoriteModel.create({ userId, type, targetId });
+      await FavoriteModel.create({ userId, type, targetId });
       res.json({ message: 'Added to favorites', isFavorite: true });
     }
   } catch (error) {
@@ -37,7 +37,7 @@ export const getFavorites = async (req: Request, res: Response) => {
       return res.status(401).json({ message: 'Unauthorized' });
     }
 
-    const favorites = FavoriteModel.findAllByUser(userId, type as string | undefined);
+    const favorites = await FavoriteModel.findAllByUser(userId, type as string | undefined);
     res.json(favorites);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching favorites', error });

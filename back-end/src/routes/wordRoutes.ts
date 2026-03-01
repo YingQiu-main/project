@@ -20,9 +20,7 @@ router.post('/chapters/:chapterId/practice', authenticateToken, wordController.s
 // GET /api/words/chapters/:chapterId/progress
 router.get('/chapters/:chapterId/progress', authenticateToken, wordController.getChapterProgress);
 
-// 获取随机单词（需登录）
-// GET /api/words/random
-router.get('/random', authenticateToken, wordController.getRandomWord);
+
 
 export default router;
 

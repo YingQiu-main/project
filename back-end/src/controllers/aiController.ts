@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 
 // 加载环境变量
 dotenv.config();
+dotenv.config({ path: 'env.local' });
 
 // 初始化 OpenAI 客户端
 // 优先使用环境变量，如果没有则使用默认值（来自用户提供的示例）

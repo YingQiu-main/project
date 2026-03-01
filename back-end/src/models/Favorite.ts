@@ -9,50 +9,47 @@ export interface Favorite {
 
 export class FavoriteModel {
   // 添加收藏
-  static create(favorite: Omit<Favorite, 'id'>): Favorite {
-    // SQL: 向favorites表插入新收藏记录（用户ID、收藏类型、目标ID）
-    const stmt = db.prepare(
-      'INSERT INTO favorites (userId, type, targetId) VALUES (?, ?, ?)'
+  static async create(favorite: Omit<Favorite, 'id'>): Promise<Favorite> {
+    const [result] = await db.execute(
+      'INSERT INTO favorites (userId, type, targetId) VALUES (?, ?, ?)',
+      [favorite.userId, favorite.type, favorite.targetId]
     );
-    const info = stmt.run(favorite.userId, favorite.type, favorite.targetId);
-    return { ...favorite, id: info.lastInsertRowid as number };
+    return { ...favorite, id: (result as any).insertId as number };
   }
 
   // 根据用户ID、类型和目标ID查找收藏记录
-  static findByUserAndTarget(
+  static async findByUserAndTarget(
     userId: number,
     type: string,
     targetId: number
-  ): Favorite | undefined {
-    // SQL: 从favorites表中查询指定用户、类型和目标的收藏记录
-    const stmt = db.prepare(
-      'SELECT * FROM favorites WHERE userId = ? AND type = ? AND targetId = ?'
+  ): Promise<Favorite | undefined> {
+    const [rows] = await db.query(
+      'SELECT * FROM favorites WHERE userId = ? AND type = ? AND targetId = ? LIMIT 1',
+      [userId, type, targetId]
     );
-    const favorite = stmt.get(userId, type, targetId) as Favorite | undefined;
-    return favorite;
+    const favorites = rows as Favorite[];
+    return favorites[0];
   }
 
   // 删除收藏
-  static delete(userId: number, type: string, targetId: number): void {
-    // SQL: 从favorites表中删除指定用户、类型和目标的收藏记录
-    const stmt = db.prepare(
-      'DELETE FROM favorites WHERE userId = ? AND type = ? AND targetId = ?'
+  static async delete(userId: number, type: string, targetId: number): Promise<void> {
+    await db.execute(
+      'DELETE FROM favorites WHERE userId = ? AND type = ? AND targetId = ?',
+      [userId, type, targetId]
     );
-    stmt.run(userId, type, targetId);
   }
 
   // 获取用户的所有收藏（可选择性按类型筛选）
-  static findAllByUser(userId: number, type?: string): Favorite[] {
+  static async findAllByUser(userId: number, type?: string): Promise<Favorite[]> {
     if (type) {
-      // SQL: 从favorites表中查询指定用户和类型的收藏记录
-      const stmt = db.prepare(
-        'SELECT * FROM favorites WHERE userId = ? AND type = ?'
+      const [rows] = await db.query(
+        'SELECT * FROM favorites WHERE userId = ? AND type = ?',
+        [userId, type]
       );
-      return stmt.all(userId, type) as Favorite[];
+      return rows as Favorite[];
     } else {
-      // SQL: 从favorites表中查询指定用户的所有收藏记录
-      const stmt = db.prepare('SELECT * FROM favorites WHERE userId = ?');
-      return stmt.all(userId) as Favorite[];
+      const [rows] = await db.query('SELECT * FROM favorites WHERE userId = ?', [userId]);
+      return rows as Favorite[];
     }
   }
 }

@@ -4,7 +4,7 @@ import SentenceModel from '../models/Sentence';
 // 获取所有长难句列表
 export const getSentences = async (req: Request, res: Response) => {
   try {
-    const sentences = SentenceModel.findAll();
+    const sentences = await SentenceModel.findAll();
     res.json(sentences);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching sentences', error });
@@ -15,7 +15,7 @@ export const getSentences = async (req: Request, res: Response) => {
 export const getSentenceById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const sentence = SentenceModel.findById(Number(id));
+    const sentence = await SentenceModel.findById(Number(id));
     if (!sentence) {
       return res.status(404).json({ message: 'Sentence not found' });
     }
@@ -29,7 +29,7 @@ export const getSentenceById = async (req: Request, res: Response) => {
 export const createSentence = async (req: Request, res: Response) => {
   try {
     const { content, translation, analysis } = req.body;
-    const newSentence = SentenceModel.create({ content, translation, analysis });
+    const newSentence = await SentenceModel.create({ content, translation, analysis });
     res.status(201).json(newSentence);
   } catch (error) {
     res.status(500).json({ message: 'Error creating sentence', error });

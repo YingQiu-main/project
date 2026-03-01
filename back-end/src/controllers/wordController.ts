@@ -20,12 +20,12 @@ export const getChapters = async (req: Request, res: Response) => {
     const level = req.query.level as 'cet4' | 'cet6' | undefined;
     
     // 根据level过滤章节，如果没有指定level则返回所有章节
-    const chapters = level 
-      ? ChapterModel.findByLevel(level)
-      : ChapterModel.findAll();
+    const chapters = level
+      ? await ChapterModel.findByLevel(level)
+      : await ChapterModel.findAll();
     
     // 获取用户所有章节的学习状态
-    const userChapterProgressList = UserChapterProgressModel.findAllByUser(userId);
+    const userChapterProgressList = await UserChapterProgressModel.findAllByUser(userId);
     const progressMap = new Map<number, number>(); // chapterId -> status
     userChapterProgressList.forEach(progress => {
       progressMap.set(progress.chapterId, progress.status);
@@ -59,21 +59,22 @@ export const getChapterWords = async (req: Request, res: Response) => {
     }
 
     // 检查章节是否存在
-    const chapter = ChapterModel.findById(Number(chapterId));
+    const chapter = await ChapterModel.findById(Number(chapterId));
     if (!chapter) {
       return res.status(404).json({ message: '章节不存在' });
     }
 
     // 获取该章节的所有单词ID（按顺序）
-    const wordIds = ChapterWordModel.findWordIdsByChapterId(Number(chapterId));
+    const wordIds = await ChapterWordModel.findWordIdsByChapterId(Number(chapterId));
     
     // 获取该章节的所有单词信息
-    const words = wordIds
-      .map(wordId => WordModel.findById(wordId))
-      .filter(word => word !== undefined) as Array<NonNullable<ReturnType<typeof WordModel.findById>>>;
+    const wordResults = await Promise.all(wordIds.map(wordId => WordModel.findById(wordId)));
+    const words = wordResults.filter(
+      (word): word is NonNullable<typeof word> => word !== undefined
+    );
 
     // 获取用户在该章节的学习进度
-    const progressList = UserWordProgressModel.findByUserChapter(userId, Number(chapterId));
+    const progressList = await UserWordProgressModel.findByUserChapter(userId, Number(chapterId));
     const progressMap = new Map<number, UserWordProgress>();
     progressList.forEach(progress => {
       progressMap.set(progress.wordId, progress);
@@ -90,7 +91,7 @@ export const getChapterWords = async (req: Request, res: Response) => {
     });
 
     // 获取用户在该章节的学习状态
-    const chapterProgress = UserChapterProgressModel.findByUserChapter(userId, Number(chapterId));
+    const chapterProgress = await UserChapterProgressModel.findByUserChapter(userId, Number(chapterId));
     const chapterStatus = chapterProgress ? chapterProgress.status : 0; // 如果没有记录，默认为0（未学习）
 
     res.json({
@@ -122,7 +123,7 @@ export const submitChapterPractice = async (req: Request, res: Response) => {
     }
 
     // 检查章节是否存在
-    const chapter = ChapterModel.findById(Number(chapterId));
+    const chapter = await ChapterModel.findById(Number(chapterId));
     if (!chapter) {
       return res.status(404).json({ message: '章节不存在' });
     }
@@ -153,7 +154,7 @@ export const submitChapterPractice = async (req: Request, res: Response) => {
     }));
 
     // 批量更新用户单词学习进度
-    UserWordProgressModel.batchUpsert(progresses);
+    await UserWordProgressModel.batchUpsert(progresses);
 
     // 计算章节完成状态
     // 如果所有单词都已掌握（isMastered === 1），则章节状态为已完成（2）
@@ -163,7 +164,7 @@ export const submitChapterPractice = async (req: Request, res: Response) => {
     const chapterStatus = allMastered ? 2 : 1; // 2-已完成，1-学习中
 
     // 更新用户章节学习状态
-    UserChapterProgressModel.upsert({
+    await UserChapterProgressModel.upsert({
       userId,
       chapterId: Number(chapterId),
       status: chapterStatus,
@@ -171,7 +172,7 @@ export const submitChapterPractice = async (req: Request, res: Response) => {
     });
 
     // 获取更新后的统计信息
-    const stats = UserWordProgressModel.getChapterStats(userId, Number(chapterId));
+    const stats = await UserWordProgressModel.getChapterStats(userId, Number(chapterId));
 
     res.json({
       message: '练习结果已保存',
@@ -196,16 +197,16 @@ export const getChapterProgress = async (req: Request, res: Response) => {
     }
 
     // 检查章节是否存在
-    const chapter = ChapterModel.findById(Number(chapterId));
+    const chapter = await ChapterModel.findById(Number(chapterId));
     if (!chapter) {
       return res.status(404).json({ message: '章节不存在' });
     }
 
     // 获取统计信息
-    const stats = UserWordProgressModel.getChapterStats(userId, Number(chapterId));
+    const stats = await UserWordProgressModel.getChapterStats(userId, Number(chapterId));
 
     // 获取用户在该章节的学习状态
-    const chapterProgress = UserChapterProgressModel.findByUserChapter(userId, Number(chapterId));
+    const chapterProgress = await UserChapterProgressModel.findByUserChapter(userId, Number(chapterId));
     const chapterStatus = chapterProgress ? chapterProgress.status : 0; // 如果没有记录，默认为0（未学习）
 
     res.json({
@@ -224,18 +225,4 @@ export const getChapterProgress = async (req: Request, res: Response) => {
   }
 };
 
-// 获取随机单词（保留原有接口）
-export const getRandomWord = async (req: Request, res: Response) => {
-  try {
-    const word = WordModel.findRandom();
 
-    if (!word) {
-      return res.status(404).json({ message: '数据库中没有单词' });
-    }
-
-    res.json(word);
-  } catch (error) {
-    console.error('获取随机单词失败:', error);
-    res.status(500).json({ message: '服务器错误' });
-  }
-};

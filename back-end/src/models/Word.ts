@@ -10,55 +10,44 @@ export interface Word {
 // 把所有和 words 表相关的操作封装在一个类里，形成 模型层（Model），类里包含了对数据库的增删改查
 export class WordModel {
   // 创建新单词，ts工具类型，Omit<Word, 'id'>用于排除ts的某个字段属性
-  static create(word: Omit<Word, 'id'>): Word {
-    // db.prepare(sql)返回一个可执行的语句对象（Statement 对象） 
-    const stmt = db.prepare('INSERT INTO words (text, phonetic, translation, level) VALUES (?, ?, ?, ?)');
-    // 执行sql语句，返回info，lastInsertRowid插入记录的id，change是影响的行数
-    const info = stmt.run(word.text, word.phonetic, word.translation, word.level);
-    // 返回完整的插入对象
-    return { ...word, id: info.lastInsertRowid as number };
+  static async create(word: Omit<Word, 'id'>): Promise<Word> {
+    // MySQL 插入后通过 insertId 拿到主键
+    const [result] = await db.execute(
+      'INSERT INTO words (text, phonetic, translation, level) VALUES (?, ?, ?, ?)',
+      [word.text, word.phonetic, word.translation, word.level]
+    );
+    return { ...word, id: (result as any).insertId as number };
   }
 
   // 根据单词ID查找单词
-  static findById(id: number): Word | undefined {
-    // SQL: 从words表中查询指定ID的单词信息
-    const stmt = db.prepare('SELECT * FROM words WHERE id = ?');
-    const word = stmt.get(id) as Word | undefined;
-    return word;
-  }
-
-  // 根据单词文本查找单词(暂不使用)
-  static findByText(text: string): Word | undefined {
-    // SQL: 从words表中查询指定文本的单词信息
-    const stmt = db.prepare('SELECT * FROM words WHERE text = ?');
-    const word = stmt.get(text) as Word | undefined;
-    return word;
+  static async findById(id: number): Promise<Word | undefined> {
+    const [rows] = await db.query('SELECT * FROM words WHERE id = ? LIMIT 1', [id]);
+    const words = rows as Word[];
+    return words[0];
   }
 
   // 随机获取一个单词
-  static findRandom(): Word | undefined {
-    // SQL: 从words表中随机选择一条单词记录（使用RANDOM()函数随机排序，限制返回1条）
-    const stmt = db.prepare('SELECT * FROM words ORDER BY RANDOM() LIMIT 1');
-    const word = stmt.get() as Word | undefined;
-    return word;
+  static async findRandom(): Promise<Word | undefined> {
+    // MySQL 随机函数是 RAND()
+    const [rows] = await db.query('SELECT * FROM words ORDER BY RAND() LIMIT 1');
+    const words = rows as Word[];
+    return words[0];
   }
 
   // 获取所有单词
-  static findAll(): Word[] {
-    // SQL: 从words表中查询所有单词记录
-    const stmt = db.prepare('SELECT * FROM words');
-    return stmt.all() as Word[];
+  static async findAll(): Promise<Word[]> {
+    const [rows] = await db.query('SELECT * FROM words');
+    return rows as Word[];
   }
 
   // 根据级别获取单词
-  static findByLevel(level: 'cet4' | 'cet6'): Word[] {
-    // SQL: 从words表中查询指定级别的所有单词记录
-    const stmt = db.prepare('SELECT * FROM words WHERE level = ?');
-    return stmt.all(level) as Word[];
+  static async findByLevel(level: 'cet4' | 'cet6'): Promise<Word[]> {
+    const [rows] = await db.query('SELECT * FROM words WHERE level = ?', [level]);
+    return rows as Word[];
   }
 
   // 更新单词信息(暂不使用)
-  static update(id: number, word: Partial<Omit<Word, 'id'>>): void {
+  static async update(id: number, word: Partial<Omit<Word, 'id'>>): Promise<void> {
     const keys = Object.keys(word);
     if (keys.length === 0) return;
 
@@ -67,16 +56,14 @@ export class WordModel {
     const values = keys.map((key) => (word as any)[key]);
     
     // SQL: 更新words表中指定ID的单词记录
-    const stmt = db.prepare(`UPDATE words SET ${setClause} WHERE id = ?`);
-    stmt.run(...values, id);
+    await db.execute(`UPDATE words SET ${setClause} WHERE id = ?`, [...values, id]);
   }
 
   // 统计单词总数
-  static count(): number {
-    // SQL: 统计words表中的记录总数
-    const stmt = db.prepare('SELECT COUNT(*) as count FROM words');
-    const result = stmt.get() as { count: number };
-    return result.count;
+  static async count(): Promise<number> {
+    const [rows] = await db.query('SELECT COUNT(*) as count FROM words');
+    const result = (rows as Array<{ count: number }>)[0];
+    return result?.count || 0;
   }
 }
 

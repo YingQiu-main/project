@@ -9,28 +9,25 @@ export interface Sentence {
 
 export class SentenceModel {
   // 创建新长难句
-  static create(sentence: Omit<Sentence, 'id'>): Sentence {
-    // SQL: 向sentences表插入新长难句记录（句子内容、翻译、解析）
-    const stmt = db.prepare(
-      'INSERT INTO sentences (content, translation, analysis) VALUES (?, ?, ?)'
+  static async create(sentence: Omit<Sentence, 'id'>): Promise<Sentence> {
+    const [result] = await db.execute(
+      'INSERT INTO sentences (content, translation, analysis) VALUES (?, ?, ?)',
+      [sentence.content, sentence.translation, sentence.analysis]
     );
-    const info = stmt.run(sentence.content, sentence.translation, sentence.analysis);
-    return { ...sentence, id: info.lastInsertRowid as number };
+    return { ...sentence, id: (result as any).insertId as number };
   }
 
   // 根据句子ID查找长难句
-  static findById(id: number): Sentence | undefined {
-    // SQL: 从sentences表中查询指定ID的长难句信息
-    const stmt = db.prepare('SELECT * FROM sentences WHERE id = ?');
-    const sentence = stmt.get(id) as Sentence | undefined;
-    return sentence;
+  static async findById(id: number): Promise<Sentence | undefined> {
+    const [rows] = await db.query('SELECT * FROM sentences WHERE id = ? LIMIT 1', [id]);
+    const sentences = rows as Sentence[];
+    return sentences[0];
   }
 
   // 获取所有长难句
-  static findAll(): Sentence[] {
-    // SQL: 从sentences表中查询所有长难句记录
-    const stmt = db.prepare('SELECT * FROM sentences');
-    return stmt.all() as Sentence[];
+  static async findAll(): Promise<Sentence[]> {
+    const [rows] = await db.query('SELECT * FROM sentences');
+    return rows as Sentence[];
   }
 }
 

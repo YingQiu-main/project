@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import UserModel from '../models/User';
 
@@ -9,16 +9,16 @@ export const register = async (req: Request, res: Response) => {
     const { username, password } = req.body;
 
     // 1. 检查用户是否已存在
-    const existingUser = UserModel.findByUsername(username);
+    const existingUser = await UserModel.findByUsername(username);
     if (existingUser) {
       return res.status(400).json({ message: 'Username already exists' });
     }
 
-    // 2. 第二个参数是盐的复杂度，进行哈希加密，返回加密后的字符串
+    // 2. 用 bcryptjs 加密密码后再存库
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // 3. 创建用户
-    const newUser = UserModel.create({
+    const newUser = await UserModel.create({
       username,
       password: hashedPassword,
     });
@@ -36,7 +36,7 @@ export const login = async (req: Request, res: Response) => {
     const { username, password } = req.body;
 
     // 1. 查找用户
-    const user = UserModel.findByUsername(username);
+    const user = await UserModel.findByUsername(username);
     if (!user) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }

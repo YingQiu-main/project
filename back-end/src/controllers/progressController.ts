@@ -14,7 +14,7 @@ export const recordProgress = async (req: Request, res: Response) => {
       return res.status(401).json({ message: 'Unauthorized' });
     }
 
-    const record = StudyRecordModel.create({
+    const record = await StudyRecordModel.create({
       userId,
       type,
       targetId,
@@ -39,14 +39,14 @@ export const getStats = async (req: Request, res: Response) => {
     }
 
     // 统计累计练习单词数
-    const wordCount = StudyRecordModel.countWordsPracticed(userId);
+    const wordCount = await StudyRecordModel.countWordsPracticed(userId);
 
     // 统计文章阅读量
-    const articleCount = StudyRecordModel.countArticlesRead(userId);
+    const articleCount = await StudyRecordModel.countArticlesRead(userId);
 
     // 简单的正确率计算
-    const correctCount = StudyRecordModel.countCorrectWords(userId);
-    const totalPractice = StudyRecordModel.countTotalWordPractices(userId);
+    const correctCount = await StudyRecordModel.countCorrectWords(userId);
+    const totalPractice = await StudyRecordModel.countTotalWordPractices(userId);
 
     const accuracy = totalPractice > 0 ? (correctCount / totalPractice) : 0;
 

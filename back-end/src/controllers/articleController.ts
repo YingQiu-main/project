@@ -5,7 +5,7 @@ import ArticleModel from '../models/Article';
 export const getArticles = async (req: Request, res: Response) => {
   try {
     // 列表页只需要返回标题和阅读时长
-    const articles = ArticleModel.findAllSummaries();
+    const articles = await ArticleModel.findAllSummaries();
     res.json({
       success: true,
       data: articles
@@ -33,7 +33,7 @@ export const getArticleById = async (req: Request, res: Response) => {
       });
     }
     
-    const article = ArticleModel.findById(articleId);
+    const article = await ArticleModel.findById(articleId);
     if (!article) {
       return res.status(404).json({ 
         success: false,
@@ -68,7 +68,7 @@ export const createArticle = async (req: Request, res: Response) => {
       });
     }
     
-    const article = ArticleModel.create({ 
+    const article = await ArticleModel.create({ 
       level, 
       title, 
       content, 

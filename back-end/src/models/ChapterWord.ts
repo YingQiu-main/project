@@ -9,37 +9,42 @@ export interface ChapterWord {
 
 export class ChapterWordModel {
   // 向章节添加单词(暂不考虑)
-  static create(chapterWord: Omit<ChapterWord, 'id'>): ChapterWord {
-    // SQL: 向chapter_words表插入新关联记录（章节ID、单词ID、顺序）
-    const stmt = db.prepare(
-      'INSERT INTO chapter_words (chapterId, wordId, order_index) VALUES (?, ?, ?)'
+  static async create(chapterWord: Omit<ChapterWord, 'id'>): Promise<ChapterWord> {
+    const [result] = await db.execute(
+      'INSERT INTO chapter_words (chapterId, wordId, order_index) VALUES (?, ?, ?)',
+      [chapterWord.chapterId, chapterWord.wordId, chapterWord.order_index]
     );
-    const info = stmt.run(chapterWord.chapterId, chapterWord.wordId, chapterWord.order_index);
-    return { ...chapterWord, id: info.lastInsertRowid as number };
+    return { ...chapterWord, id: (result as any).insertId as number };
   }
 
   // 获取指定章节的所有单词ID（按顺序）
-  static findWordIdsByChapterId(chapterId: number): number[] {
-    // SQL: 从chapter_words表中查询指定章节的所有单词ID，按顺序排序
-    const stmt = db.prepare(
-      'SELECT wordId FROM chapter_words WHERE chapterId = ? ORDER BY order_index ASC'
+  static async findWordIdsByChapterId(chapterId: number): Promise<number[]> {
+    const [rows] = await db.query(
+      'SELECT wordId FROM chapter_words WHERE chapterId = ? ORDER BY order_index ASC',
+      [chapterId]
     );
-    const results = stmt.all(chapterId) as { wordId: number }[];
+    const results = rows as { wordId: number }[];
     return results.map(r => r.wordId);
   }
 
   // 批量插入章节单词关联
-  static batchCreate(chapterWords: Omit<ChapterWord, 'id'>[]): void {
-    // SQL: 批量插入章节单词关联记录
-    const stmt = db.prepare(
-      'INSERT INTO chapter_words (chapterId, wordId, order_index) VALUES (?, ?, ?)'
-    );
-    const insertMany = db.transaction((words: Omit<ChapterWord, 'id'>[]) => {
-      for (const word of words) {
-        stmt.run(word.chapterId, word.wordId, word.order_index);
+  static async batchCreate(chapterWords: Omit<ChapterWord, 'id'>[]): Promise<void> {
+    const conn = await db.getConnection();
+    try {
+      await conn.beginTransaction();
+      for (const word of chapterWords) {
+        await conn.execute(
+          'INSERT INTO chapter_words (chapterId, wordId, order_index) VALUES (?, ?, ?)',
+          [word.chapterId, word.wordId, word.order_index]
+        );
       }
-    });
-    insertMany(chapterWords);
+      await conn.commit();
+    } catch (error) {
+      await conn.rollback();
+      throw error;
+    } finally {
+      conn.release();
+    }
   }
 }
 

@@ -267,13 +267,6 @@ export const useWordStore = defineStore('word', () => {
     allWords.value = words
   }
   
-  // 获取随机单词
-  const getRandomWord = (): Word | null => {
-    const words = learningWords.value
-    if (words.length === 0) return null
-    const randomIndex = Math.floor(Math.random() * words.length)
-    return words[randomIndex] || null
-  }
   
   // 获取多个随机单词
   const getRandomWords = (count: number): Word[] => {
@@ -293,7 +286,6 @@ export const useWordStore = defineStore('word', () => {
     markAsMastered,
     resetProgress,
     setWords,
-    getRandomWord,
     getRandomWords,
     initialize,
     manualSync,

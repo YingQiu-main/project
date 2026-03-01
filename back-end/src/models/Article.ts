@@ -25,28 +25,27 @@ export interface ArticleSummary {
 
 export class ArticleModel {
   // 创建新文章
-  static create(article: Omit<Article, 'id' | 'created_at'>): Article {
-    // SQL: 向articles表插入新文章记录
+  static async create(article: Omit<Article, 'id' | 'created_at'>): Promise<Article> {
+    // SQL: 向 articles 表插入新文章记录
     const vocabularyJson = JSON.stringify(article.vocabulary || []);
-    const stmt = db.prepare(
-      'INSERT INTO articles (level, title, content, translation, vocabulary, reading_time) VALUES (?, ?, ?, ?, ?, ?)'
-    );
-    const info = stmt.run(
+    const [result] = await db.execute(
+      'INSERT INTO articles (level, title, content, translation, vocabulary, reading_time) VALUES (?, ?, ?, ?, ?, ?)',
+      [
       article.level,
       article.title,
       article.content,
       article.translation,
       vocabularyJson,
       article.reading_time
+      ]
     );
-    return { ...article, id: info.lastInsertRowid as number };
+    return { ...article, id: (result as any).insertId as number };
   }
 
   // 根据文章ID查找文章
-  static findById(id: number): Article | undefined {
-    // SQL: 从articles表中查询指定ID的文章完整信息
-    const stmt = db.prepare('SELECT * FROM articles WHERE id = ?');
-    const row = stmt.get(id) as any;
+  static async findById(id: number): Promise<Article | undefined> {
+    const [rows] = await db.query('SELECT * FROM articles WHERE id = ? LIMIT 1', [id]);
+    const row = (rows as any[])[0];
     if (!row) return undefined;
     
     // 解析 vocabulary JSON 字符串
@@ -75,10 +74,9 @@ export class ArticleModel {
   }
 
   // 获取所有文章
-  static findAll(): Article[] {
-    // SQL: 从articles表中查询所有文章的完整信息
-    const stmt = db.prepare('SELECT * FROM articles ORDER BY id');
-    const rows = stmt.all() as any[];
+  static async findAll(): Promise<Article[]> {
+    const [rowsData] = await db.query('SELECT * FROM articles ORDER BY id');
+    const rows = rowsData as any[];
     
     return rows.map(row => {
       // 解析 vocabulary JSON 字符串
@@ -108,10 +106,9 @@ export class ArticleModel {
   }
 
   // 获取所有文章的摘要信息（仅ID、标题、阅读时长）
-  static findAllSummaries(): ArticleSummary[] {
-    // SQL: 从articles表中查询文章的摘要信息（只返回id、title、reading_time字段）
-    const stmt = db.prepare('SELECT id, title, reading_time FROM articles ORDER BY id');
-    return stmt.all() as ArticleSummary[];
+  static async findAllSummaries(): Promise<ArticleSummary[]> {
+    const [rows] = await db.query('SELECT id, title, reading_time FROM articles ORDER BY id');
+    return rows as ArticleSummary[];
   }
 }
 
