@@ -24,11 +24,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // 2. 路由挂载
 
-// 将 routes/index.ts 中导出的路由挂载到 /api 路径下
-// 这意味着所有 API 请求的 URL 都会以 /api 开头
-// 例如：
-// - 登录接口: /api/auth/login
-// - 单词接口: /api/words/random
+// 只要请求路径 以 /api 开头，就交给 routes 处理
 app.use('/api', routes);
 
 // 3. 基础健康检查接口
